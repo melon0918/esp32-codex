@@ -1,0 +1,17 @@
+# Local Codex and Python artifacts
+.codex/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Generated plugin payload and machine-specific MCP config
+plugins/esp32-codex/.mcp.json
+plugins/esp32-codex/.mcp.json.before-*
+plugins/esp32-codex/mcp-server/
+plugins/esp32-codex/tests/
+plugins/esp32-codex/docs/
+plugins/esp32-codex/web-panel/
+plugins/esp32-codex/bridge.py
+plugins/esp32-codex/requirements*.txt
+web-panel/review/
