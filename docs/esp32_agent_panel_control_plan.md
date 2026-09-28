@@ -1,6 +1,6 @@
 # ESP32 Codex：Agent 完整控制面板开发计划
 
-日期：2026-09-28。状态：AC-00–AC-08 已完成开发实现与限定范围验收；RCT-01–06 面板实机点击验收已完成。AC-09 正在按机器人仓库 MD-P11 继续单机真机联调。用户要求 Web 为正式面板；Tk 暂留兼容回退。Windows 原生 MCP、Agent 确认处理、COM4 共享状态与窗口生命周期均已实证；Codex 对话侧真实确认渠道仍未验收。
+日期：2026-09-29。状态：AC-00–AC-08 已完成开发实现与限定范围验收；RCT-01–06 面板实机点击验收已完成。AC-09 的 lease 恢复修复已通过完整包测试并提交到 GitHub PR #1；机器人仓库 MD-P11 继续进行，但当前 Codex MCP 查询无 broker lease、板端 `/identity` 超时。用户要求 Web 为正式面板；Tk 暂留兼容回退。Windows 原生 MCP、Agent 确认处理、COM4 共享状态与窗口生命周期均已实证；Codex 对话侧真实确认渠道仍未验收。
 
 本计划已从机器人项目迁入本仓库 docs/esp32_agent_panel_control_plan.md，作为 ESP32 Codex 插件的独立开发计划；原维护源位于 [本机路径] 路径 [本机路径] Git 仓库，源树未发现 AGENTS.md。维护源与插件缓存分开，缓存不直接编辑。修改前创建的维护源快照 [本机路径] 排除个人 .mcp.json 和 .venv。此计划记录 MD-P11 的插件工具依赖改造，不改变机器人的多设备协议，也不合并到 MD-P12。
 
@@ -100,7 +100,7 @@ AC-01 另外确认两项必须修复的跨客户端缺陷：`BrokerHost._workspa
 | AC-06 | Web 主面板窗口状态/生命周期 MCP 工具及状态同步 | 完成：status/control 支持 open/focus/minimize/restore/close；标准 WM_CLOSE 释放自身 lease；fake Win32 3/3、MCP tool discovery 1/1、broker idle/heartbeat 1/1、peer lease 1/1。真实可见窗口点按留待 AC-08；Tk 暂保留至 Web 验收后再退役 |
 | AC-07 | 跨入口与打包回归、文档/技能更新、升级与回退包 | 完成开发范围：修复 standalone 源布局测试；Windows 临时暂存包 probe、完整控制面核心工具 MCP 发现及 142/142 mock/假桥全套通过。未改个人安装/缓存；当前会话 WSL→Windows schema 重挂载、可见 Web 面板、安装/回退演练留待 AC-08 验收 |
 | AC-08 | 经授权的单板真实验收及交付记录 | 限定范围完成：Windows 原生 MCP 发现 36 工具；共享工作区切至四足 generic `/main.py`；COM4 真实连接、MicroPython 身份、状态和断开通过；板载文件 list/read 与临时探针 write/read/strict-backup-delete 通过。Agent 在用户授权下通过面板专用接口处理精确请求；不是真人点按验收。板载 `/main.py` 与本地源码摘要不同，未覆盖或运行；本地严格备份留存。 |
-| AC-09 | 回到机器人 MD-P11，整理交付 | 进行中：已确认机器人仓库要求及 MD-P11 范围；按单机固件部署、真实身份/租约、网络及动作验收步骤推进；MD-P12 仍另定现场范围 |
+| AC-09 | 回到机器人 MD-P11，整理交付 | 进行中：lease 恢复代码提交到 GitHub PR #1，149/149 包测试通过；Codex MCP 客户端仍无 lease，但临时 fresh BrokerClient 确认共享 bridge 已断开且 COM4 可枚举；MD-P11 的真实身份/租约、网络及动作验收仍待 MCP/板端网络恢复；MD-P12 仍另定现场范围 |
 
 ### AC-09 继续：MCP 只读查询恢复 broker lease — 完成
 
@@ -108,7 +108,7 @@ AC-01 另外确认两项必须修复的跨客户端缺陷：`BrokerHost._workspa
 - 验收标准：lease 丢失后的安全只读查询自动建立新 lease 并返回共享状态；同时在线时恢复到同一个 broker/backend；控制与文件操作不得因重连而自动重放，调用方先收到明确错误，再可读取状态；相关 broker 集成测试和完整插件测试通过。
 - 范围：仅修改 broker 客户端重连路径及其测试/日志，不连接串口或触碰设备。本阶段完成后再继续 AC-09 实机流程。
 - 结果：只对状态、串口、控制台、当前工作区/策略及确认状态读取自动恢复；控制、文件、策略变更和确认变更不自动重连或重放。主动关闭的客户端仍保持关闭。生成插件包完整测试 149/149 通过；故障用例在源树和插件包各 1/1 通过。
-- 当前 Windows MCP 工具进程仍是旧代码；刚才 `esp32_status` 实测仍返回 `client has no broker lease`。同步安装副本并重启 MCP/面板后再作实机续测。
+- 源树、干净克隆和个人安装副本的 `mcp-server/broker/client.py` SHA-256 一致；但当前 MCP status/ports/snapshot 仍返回 `client has no broker lease`。临时 fresh BrokerClient 获得共享工作区只读状态：profile=`generic`、entry=`/main.py`、`connected=false`、`busy=false`，COM4 可枚举；随后释放 lease。面板状态为打开且可见，`focus` 返回 `focus_denied`；板端 `/identity` 只读请求 5 秒超时。尚未重连串口、读写板载文件或下发机器人动作；恢复正常 MCP 客户端 lease 与板端 HTTP 后再续测 MD-P11。
 
 面板状态最终更新（2026-09-28）：AC-08 日志初稿记为“可见但不在前台”；随后 Agent 调用 `esp32_panel_control(focus)` 返回成功，最终窗口 `foreground=true`。
 

@@ -1,6 +1,6 @@
-# 2026-09-28 最新状态：RCT-01–06 完成；AC-09 / MD-P11 进行中
+# 2026-09-29 最新状态：RCT-01–06 完成；AC-09 / MD-P11 进行中
 
-AC-09 broker 恢复修复已在源码和生成插件包验证：失去 lease 后安全只读查询可建立新 lease；控制/文件请求不自动重放；插件包完整测试 149/149 通过。当前 Codex MCP 工具进程仍运行旧代码，实测 `esp32_status` 仍返回 `client has no broker lease`；安装副本和当前进程重载待完成。修复及验收细节见专项计划和当日日志。
+AC-09 broker 恢复修复已在源码和生成插件包验证：失去 lease 后安全只读查询可建立新 lease；控制/文件请求不自动重放；插件包完整测试 149/149 通过。源树、GitHub 克隆和个人安装副本的 broker client 哈希一致。当前 Codex MCP 工具的状态/端口/快照调用仍返回 `client has no broker lease`；短暂 fresh BrokerClient 可取得只读 lease 并确认共享 bridge 已断开、COM4 可枚举。Web 面板打开且可见，Windows 拒绝置前请求；板端 `/identity` 主机请求超时，MD-P11 身份、租约和网络验收仍未完成。独立源码已推送 commit `51f46c3`，PR [#1](https://github.com/melon0918/esp32-codex/pull/1) 保持打开。修复及验收细节见专项计划和当日日志。
 
 UI-13 已完成：Web 面板现在保留桥/Broker 超时或传输失败的“结果未知”语义，并提示先刷新状态、不要重放。项目源和自包含发行包的控制/确认定向回归各 23/23 通过；无模拟 broker 残留。项目级令牌/PID 握手简化与快照失败时的模式标记仍未处理。
 
