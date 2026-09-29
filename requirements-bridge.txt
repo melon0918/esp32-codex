@@ -1,0 +1,3 @@
+# Optional dependency for explicitly configured real bridge mode.
+-r requirements.txt
+pyserial==3.5

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>ESP32 工作台 · UI 视觉稿</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="主导航">
+      <a class="brand-mark" href="#overview" aria-label="ESP32 工作台首页"><span>e</span></a>
+      <div class="rail-rule"></div>
+      <button class="rail-link is-active" data-view="overview" aria-label="工作台" title="工作台">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+      </button>
+      <button class="rail-link" data-view="workspace" aria-label="工作区设置" title="工作区">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+      <button class="rail-link" data-view="console" aria-label="控制台" title="控制台">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 5 5-5 5"/><path d="M12.5 17H19"/></svg>
+      </button>
+      <div class="rail-spacer"></div>
+      <span class="rail-user" aria-label="本地演示">M</span>
+    </aside>
+
+    <div class="page">
+      <header class="topbar">
+        <div class="crumb"><span class="crumb-product">ESP32</span><span class="crumb-slash">/</span><span id="crumb-current">工作台</span></div>
+        <div class="top-actions">
+          <span class="mock-chip"><i></i> MOCK 演示</span>
+          <button class="icon-button" data-demo="error" aria-label="查看错误状态" title="演示错误状态">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5"/><path d="M12 16.5h.01"/><path d="M10.3 3.8 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.8a2 2 0 0 0-3.4 0Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="view is-visible" id="overview" data-panel="overview" aria-labelledby="overview-title">
+          <div class="page-heading">
+            <div><p class="eyebrow">DEVICE WORKSPACE</p><h1 id="overview-title">工作台</h1><p class="heading-copy">连接状态与常用操作，一眼掌握。</p></div>
+            <button class="quiet-button" data-demo="busy"><span class="sparkle">✦</span> 预览忙碌态</button>
+          </div>
+
+          <article class="workspace-card">
+            <div class="workspace-card-top">
+              <div class="workspace-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h4l2 2h5A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M4.5 9h15"/></svg></div>
+              <div class="workspace-title"><span class="field-label">当前工作区</span><strong>四足机器人 · 演示项目</strong></div>
+              <span class="status-chip status-idle"><i></i> 未连接</span>
+            </div>
+            <div class="workspace-card-bottom">
+              <span class="path"><span class="path-dot"></span> demo / esp32-quadruped</span>
+              <span class="divider-dot">·</span><span class="board-name">通用 MicroPython</span>
+              <button class="text-button" data-view="workspace">管理工作区 <span aria-hidden="true">↗</span></button>
+            </div>
+          </article>
+
+          <section class="action-section" aria-labelledby="actions-title">
+            <div class="section-heading"><h2 id="actions-title">常用操作</h2><span class="micro-label">仅供界面演示</span></div>
+            <div class="action-grid">
+              <button class="action-card action-primary" data-demo="busy">
+                <span class="action-icon plug"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v5M16 4v5M6 9h12v2a6 6 0 0 1-6 6v3M12 17v3"/></svg></span>
+                <span><strong>连接设备</strong><small>选择串口并连接</small></span><span class="action-arrow">↗</span>
+              </button>
+              <button class="action-card" data-demo="confirm" data-confirm-action="run">
+                <span class="action-icon run"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg></span>
+                <span><strong>运行程序</strong><small>main.py</small></span><span class="action-arrow">↗</span>
+              </button>
+              <button class="action-card" data-view="console">
+                <span class="action-icon terminal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 5 5-5 5M12.5 17H19"/></svg></span>
+                <span><strong>打开控制台</strong><small>查看设备输出</small></span><span class="action-arrow">↗</span>
+              </button>
+            </div>
+          </section>
+
+          <div class="overview-grid">
+            <article class="surface device-surface">
+              <div class="surface-heading"><div><span class="section-kicker">DEVICE</span><h2>设备状态</h2></div><span class="source-label"><i></i>模拟数据</span></div>
+              <div class="device-empty"><div class="device-orbit"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="7" width="18" height="18" rx="4"/><path d="M12 2v5m8-5v5m-8 18v5m8-5v5M2 12h5m-5 8h5m18-8h5m-5 8h5"/></svg></div><div><strong>等待连接</strong><p>此原型不会连接真实设备</p></div></div>
+              <div class="device-meta"><span>串口 <b>—</b></span><span>固件 <b>—</b></span><span>策略 <b>逐次确认</b></span></div>
+            </article>
+            <article class="surface activity-surface">
+              <div class="surface-heading"><div><span class="section-kicker">ACTIVITY</span><h2>最近活动</h2></div><span class="live-dot"></span></div>
+              <div class="activity-item"><span class="activity-mark mark-violet">✦</span><div><strong>演示环境已就绪</strong><small>模拟工作区 · 现在</small></div></div>
+              <div class="activity-item"><span class="activity-mark mark-mint">✓</span><div><strong>本地界面预览</strong><small>没有连接设备或服务</small></div></div>
+              <button class="subtle-link" data-view="console">查看控制台 <span>→</span></button>
+            </article>
+          </div>
+
+          <div class="demo-status" id="demo-status" role="status" aria-live="polite" hidden></div>
+        </section>
+
+        <section class="view" id="workspace" data-panel="workspace" aria-labelledby="workspace-title-page" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">PROJECT SETTINGS</p><h1 id="workspace-title-page">工作区与策略</h1><p class="heading-copy">查看当前项目配置与操作保护方式。</p></div>
+            <span class="mock-chip"><i></i> 全部为模拟信息</span>
+          </div>
+          <article class="surface settings-card">
+            <div class="surface-heading"><div><span class="section-kicker">PROJECT</span><h2>项目目录</h2></div><span class="setting-tag">已选择</span></div>
+            <div class="fake-input"><span class="folder-small">▰</span><span>demo / esp32-quadruped</span><button data-demo="error" aria-label="演示路径错误">•••</button></div>
+            <div class="setting-detail"><span>项目名称</span><strong>四足机器人 · 演示项目</strong></div>
+            <div class="setting-detail"><span>设备配置</span><strong>通用 MicroPython <small>· main.py</small></strong></div>
+          </article>
+          <article class="surface settings-card deploy-card">
+            <div class="surface-heading"><div><span class="section-kicker">DEPLOYMENT</span><h2>程序部署</h2></div><span class="setting-tag">模拟文件</span></div>
+            <div class="program-file"><span class="file-icon">PY</span><div><strong>main.py</strong><small>演示工作区 · 4.2 KB</small></div><span class="file-ready">已通过示例校验</span></div>
+            <div class="backup-notice"><span>✓</span><div><strong>覆盖前严格备份</strong><p>先备份并校验旧文件；备份失败时停止，不覆盖。</p></div></div>
+            <div class="deploy-actions"><button class="deploy-button" data-demo="confirm" data-confirm-action="download">预览下载确认 <span>→</span></button><button class="deploy-run-button" data-demo="confirm" data-confirm-action="download-run">预览下载并运行 <span>↗</span></button></div>
+            <p class="deploy-footnote">按钮只展示确认样式，不会连接或写入设备。</p>
+          </article>
+          <article class="surface settings-card policy-card">
+            <div class="surface-heading"><div><span class="section-kicker">SAFETY</span><h2>操作策略</h2></div><span class="shield-mark">✳ 安全保护开启</span></div>
+            <div class="policy-choice"><span class="radio selected"></span><div><strong>写入前确认</strong><p>默认策略 <code>confirm-write</code></p></div><span class="recommended">默认策略</span></div>
+            <ul class="policy-list"><li>写入、下载、删除与 PID 修改，每次都需明确确认。</li><li>REPL 命令逐次确认；连接、运行和中断按策略执行（此策略下不额外确认）。</li></ul>
+            <div class="policy-note"><span>i</span> 此页仅展示策略样式，不会修改任何配置。</div>
+          </article>
+          <div class="settings-footer"><span><i class="lock-mark">⌑</i> 页面数据仅用于本地演示</span><button class="quiet-button" data-demo="confirm" data-confirm-action="download">预览下载确认</button></div>
+        </section>
+
+        <section class="view" id="console" data-panel="console" aria-labelledby="console-title-page" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">SERIAL CONSOLE</p><h1 id="console-title-page">控制台</h1><p class="heading-copy">查看 MicroPython 输出与交互记录。</p></div>
+            <span class="status-chip status-idle"><i></i> 未连接</span>
+          </div>
+          <div class="console-toolbar"><div class="console-tabs"><span class="console-tab active">输出</span><span class="console-tab">REPL <em>演示</em></span></div><button class="icon-text-button" data-demo="clear">清空演示输出</button></div>
+          <div class="console-window" id="console-window" aria-label="模拟控制台输出">
+            <div class="console-head"><span><i></i><i></i><i></i></span><span>MOCK SESSION <b>·</b> 未连接设备</span><span class="console-copy">静态示例</span></div>
+            <div class="console-lines" id="console-lines">
+              <p><span class="line-no">01</span><span class="time">09:41:02</span><span class="log-info">[info]</span><span>界面演示已启动</span></p>
+              <p><span class="line-no">02</span><span class="time">09:41:02</span><span class="log-muted">工作区: demo / esp32-quadruped</span></p>
+              <p><span class="line-no">03</span><span class="time">09:41:02</span><span class="log-warn">[mock]</span><span>所有输出均为虚构样例</span></p>
+              <p class="console-cursor"><span class="line-no">04</span><span class="cursor-block"></span></p>
+            </div>
+          </div>
+          <div class="console-foot"><span><i class="status-ring"></i> 无活动串口连接</span><span>缓冲区 <b>0 B</b></span></div>
+          <div class="console-actions"><button class="action-card compact" data-demo="busy"><span class="action-icon terminal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 7 5 5-5 5M12.5 17H19"/></svg></span><span><strong>发送演示命令</strong><small>仅改变页面示例文字</small></span><span class="action-arrow">↗</span></button><button class="quiet-button" data-demo="error">预览错误状态</button></div>
+        </section>
+
+        <footer class="page-footer"><span>ESP32 CODEX <b>·</b> UI 概念稿</span><span>本地静态页面 <i></i> 不连接设备</span></footer>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" hidden>
+    <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="dialog-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9m0 4v.01"/><circle cx="12" cy="12" r="9"/></svg></div>
+      <button class="dialog-close" data-close-modal aria-label="关闭">×</button>
+      <p class="eyebrow">操作确认 · UI 演示</p><h2 id="confirm-title">运行 main.py？</h2>
+      <p class="dialog-copy" id="confirm-copy">此操作会运行当前工作区的入口文件。请确认目标与影响后继续。</p>
+      <div class="target-summary"><span>目标工作区</span><strong>demo / esp32-quadruped</strong><span>操作影响</span><strong id="confirm-impact">运行 main.py · 仅为模拟演示</strong></div>
+      <div class="demo-disclaimer"><span>MOCK</span><span id="confirm-safety-note">这是静态界面演示，确认按钮不会发出设备命令。</span></div>
+      <div class="dialog-actions"><button class="dialog-cancel" data-close-modal>取消</button><button class="dialog-confirm" data-confirm-demo>确认演示操作 <span>→</span></button></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden><span class="toast-icon">✓</span><span id="toast-message">演示状态已切换</span><button data-dismiss-toast aria-label="关闭通知">×</button></div>
+</body>
+</html>

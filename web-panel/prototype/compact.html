@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32 Codex · 紧凑单页 MOCK 初稿</title>
+  <link rel="stylesheet" href="compact.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="header-drag-area pywebview-drag-region">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>
+        </div>
+        <div class="brand-copy"><strong>ESP32 工作台</strong><span id="workspace-summary">工作区 · main.py</span></div>
+        <span class="mock-chip"><i></i><span id="source-label">MOCK 预览</span></span>
+      </div>
+      <div class="window-controls" role="group" aria-label="窗口控制">
+        <button class="window-control" type="button" data-window-action="minimize" aria-label="最小化窗口" title="最小化">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5h9"/></svg>
+        </button>
+        <button class="window-control window-close" type="button" data-window-action="close" aria-label="关闭窗口" title="关闭">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 4.5 7 7m0-7-7 7"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="workbench">
+      <section class="line-row workspace-row" aria-label="当前工作区">
+        <span class="row-label">工作区</span>
+        <div class="field workspace-field"><span class="field-icon" aria-hidden="true">▱</span><span class="truncate" id="workspace-label">四足机器人项目 <small>· D:\ESP32\quad-demo</small></span></div>
+        <button class="button button-quiet" data-action="workspace">更换</button>
+      </section>
+
+      <section class="line-row" aria-label="串口连接">
+        <span class="row-label">串口</span>
+        <select class="field flex-field" id="serial-select" aria-label="选择串口"><option value="MOCK0">MOCK0 · 模拟串口（未连接）</option><option value="">刷新串口列表…</option></select>
+        <button class="button button-quiet" data-action="refresh">刷新</button>
+        <button class="button button-primary" id="connect-button" data-action="connect">连接</button>
+      </section>
+
+      <section class="line-row program-row" aria-label="当前程序">
+        <span class="row-label">程序</span>
+        <select class="field flex-field" id="program-select" aria-label="选择程序"><option value="main.py">main.py</option><option value="robot.py">robot.py</option><option value="quad.py">quad.py</option></select>
+        <button class="button button-quiet" data-action="download">下载</button>
+        <button class="button button-primary" data-action="download-run">下载并运行</button>
+      </section>
+
+      <section class="control-row" aria-label="程序控制">
+        <div class="control-buttons">
+          <button class="button button-run" data-action="run"><span aria-hidden="true">▶</span> 运行</button>
+          <button class="button button-quiet" data-action="interrupt"><span aria-hidden="true">Ⅱ</span> 中断</button>
+          <button class="button button-stop" data-action="stop"><span aria-hidden="true">■</span> 停止</button>
+        </div>
+        <div class="status-chips"><span class="connection-chip" id="connection-chip"><i></i><span id="connection-label">未连接</span></span><span class="policy-chip"><i></i><span id="policy-label">写入前确认</span></span></div>
+      </section>
+
+      <section class="console" aria-label="串口控制台">
+        <div class="console-heading">
+          <div class="console-title"><span class="terminal-icon" aria-hidden="true">›_</span><strong>串口输出</strong><span class="console-live"><i></i><span id="console-live-label">MOCK0</span></span></div>
+          <div class="console-tools"><button class="text-button" data-action="copy" aria-label="复制全部串口输出">复制输出</button><button class="text-button" data-action="clear">清空</button></div>
+        </div>
+        <div class="console-body" id="console-output" role="log" aria-live="polite">
+          <p><span class="log-time">09:41:02</span><span class="log-tag tag-system">系统</span><span>模拟控制台已就绪</span></p>
+          <p><span class="log-time">09:41:02</span><span class="log-tag tag-info">信息</span><span>工作区：四足机器人项目</span></p>
+          <p><span class="log-time">09:41:03</span><span class="log-tag tag-mock">MOCK</span><span>此处显示串口输出，不代表实体设备状态</span></p>
+          <p class="prompt-line"><span class="prompt-mark">›</span><span class="cursor"></span></p>
+        </div>
+        <form class="repl-row" id="repl-form">
+          <span class="repl-prompt" aria-hidden="true">&gt;_</span>
+          <input id="repl-input" type="text" autocomplete="off" placeholder="输入单行 MicroPython 命令" aria-label="输入单行 MicroPython 命令">
+          <button class="button button-primary send-button" type="submit">发送</button>
+        </form>
+      </section>
+
+      <details class="advanced" id="advanced-settings">
+        <summary><span class="chevron" aria-hidden="true">⌄</span> 工作区与安全策略 <span class="advanced-note">高级设置</span></summary>
+        <div class="advanced-content">
+          <label>设备预设<select class="field" id="profile-select"><option value="generic">通用 ESP32</option><option value="hiwonder">幻尔小车</option></select></label>
+          <label>操作策略<select class="field" id="policy-select"><option value="confirm-write">confirm-write · 写入确认</option><option value="confirm-all">confirm-all · 全部确认</option><option value="auto">auto · 自动</option></select></label>
+          <div class="advanced-path"><span>工作区路径</span><code id="workspace-path">未选择</code><button class="text-button" id="policy-apply" data-action="policy">更新策略</button></div>
+          <div class="workspace-tools">
+            <div class="workspace-scan"><input class="field" id="workspace-root" type="text" autocomplete="off" placeholder="扫描目录的本机绝对路径"><button class="text-button" id="workspace-discover" data-action="discover">扫描</button></div>
+            <div class="workspace-list" id="workspace-list" aria-live="polite"></div>
+            <div class="workspace-claim">
+              <input class="field" id="claim-path" type="text" autocomplete="off" placeholder="要认领的工作区目录">
+              <input class="field" id="claim-label" type="text" maxlength="128" value="我的 ESP32 项目" aria-label="工作区名称">
+              <input class="field" id="claim-entry" type="text" maxlength="240" value="/main.py" aria-label="入口文件">
+              <button class="text-button" id="workspace-claim" data-action="claim">认领目录</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <footer class="footer-note"><span class="footer-shield" aria-hidden="true">◆</span><span id="footer-note-text">面板操作需确认 · 本窗口为 MOCK 界面预览</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" hidden>
+    <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <span class="dialog-icon" aria-hidden="true">!</span>
+      <button class="dialog-close" type="button" data-close aria-label="关闭">×</button>
+      <p class="dialog-eyebrow">MOCK 操作预览</p>
+      <h2 id="confirm-title">确认操作？</h2>
+      <p class="dialog-copy" id="confirm-copy">此窗口只预览操作确认，不连接设备或写入文件。</p>
+      <div class="dialog-actions"><button class="button button-quiet" type="button" data-close>取消</button><button class="button button-primary" type="button" id="confirm-approve">确认预览</button></div>
+    </section>
+  </div>
+  <div class="modal-backdrop agent-confirm-backdrop" id="agent-confirm-modal" hidden>
+    <section class="confirm-dialog agent-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="agent-confirm-title" aria-describedby="agent-confirm-note">
+      <span class="dialog-icon agent-dialog-icon" aria-hidden="true">?</span>
+      <p class="dialog-eyebrow">Codex 请求 · 等待面板确认</p>
+      <h2 id="agent-confirm-title">待确认操作</h2>
+      <p class="agent-confirm-kind" id="agent-confirm-kind"></p>
+      <dl class="agent-confirm-details">
+        <div><dt>目标</dt><dd id="agent-confirm-target"></dd></div>
+        <div><dt>影响</dt><dd id="agent-confirm-impact"></dd></div>
+        <div><dt>工作区上下文</dt><dd id="agent-confirm-context"></dd></div>
+      </dl>
+      <p class="agent-confirm-expiry" id="agent-confirm-expiry"></p>
+      <p class="dialog-copy" id="agent-confirm-note">批准只处理这一个待确认请求。拒绝、关闭或请求失效时，本次操作不会执行。</p>
+      <div class="dialog-actions">
+        <button class="button button-quiet" type="button" id="agent-confirm-reject">拒绝</button>
+        <button class="button button-primary" type="button" id="agent-confirm-approve">批准本次请求</button>
+      </div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="compact.js"></script>
+</body>
+</html>

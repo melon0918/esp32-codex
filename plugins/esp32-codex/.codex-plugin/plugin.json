@@ -1,0 +1,19 @@
+{
+  "name": "esp32-codex",
+  "version": "0.2.0+codex.20260929070347",
+  "description": "\u7528\u4e8e\u771f\u5b9e ESP32 MicroPython \u8bbe\u5907\u7684 Codex \u5de5\u5177\u4e0e\u7d27\u51d1\u63a7\u5236\u9762\u677f\u3002",
+  "author": {
+    "name": "ESP32 Codex"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ESP32 Codex",
+    "shortDescription": "\u8fde\u63a5\u5e76\u63a7\u5236\u771f\u5b9e ESP32 MicroPython \u8bbe\u5907\u3002",
+    "longDescription": "\u63d0\u4f9b\u771f\u5b9e\u6865\u72b6\u6001\u3001\u4e32\u53e3\u3001\u63a7\u5236\u3001REPL\u3001\u4e25\u683c\u5907\u4efd\u5199\u5165\u548c\u7d27\u51d1\u63a7\u5236\u9762\u677f\uff1b\u542f\u52a8\u540e\u4e0d\u4f1a\u81ea\u52a8\u8fde\u63a5\u4e32\u53e3\u3002",
+    "developerName": "ESP32 Codex",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "\u5148\u786e\u8ba4\u5de5\u5177\u8fd4\u56de\u7684 source \u4e0e simulated \u5b57\u6bb5\u3002\u5f53\u524d\u4e2a\u4eba\u5b89\u88c5\u4f7f\u7528\u771f\u5b9e\u6865\uff1b\u53ea\u6709\u7528\u6237\u660e\u786e\u8fde\u63a5\u540e\u624d\u4f1a\u6253\u5f00\u4e32\u53e3\u3002\u9075\u5faa\u5de5\u4f5c\u533a\u7b56\u7565\u4e0e\u4e25\u683c\u5907\u4efd\u8981\u6c42\u3002"
+  },
+  "mcpServers": "./.mcp.json"
+}
