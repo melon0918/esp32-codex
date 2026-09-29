@@ -2,7 +2,7 @@
 
 UI-14 连接诊断：COM4 的 CH340 枚举正常且可由 pyserial 约 0.01 秒打开；发送中断后 4 秒未收到任何串口数据。旧 broker 的控制 RPC 默认 15 秒等待与桥 `connect` 15 秒预算重叠，导致客户端看到 `outcome_unknown`。修复并重载后，真实 COM4 约 16 秒返回桥的“板子无响应或固件异常/回显不完整”错误，后续状态 `connected=false`。插件错误回传缺陷已修复；板端供电、固件或 CH340 至 ESP32 的 UART 链路故障点尚未定位，不将 USB 枚举成功等同于 ESP32 正常响应。当前未运行程序、写板或操作机器人。
 
-2026-09-29 重启复测：重启后共享工作区回落到 IDE 根目录 `hiwonder`/`/corex.py`，未在身份不匹配时连接；经 Agent 面板决策切换回四足 `generic`/`/main.py` 后，修复版 MCP 返回明确 `bridge_error`，提示板子无响应/固件异常，MicroPython 探测命令无回显。连接后状态为 `connected=false`；控制台只有连接开始标记。Windows PnP 的 USB-SERIAL CH340 (COM4) 为 `Status=OK`、`ProblemCode=0`、驱动 `CH341SER_A64` 版本 `3.9.2024.9`。未运行程序、写板或复位 MCU。下一步需现场检查板端供电/复位灯、USB 数据线与板端连接；若要复位或跑 ROM 探测，应先让机器人机构离地并确保舵机不会驱动。
+2026-09-29 重启复测：重启后共享工作区回落到 IDE 根目录 `hiwonder`/`/corex.py`，未在身份不匹配时连接；经 Agent 面板决策切换回四足 `generic`/`/main.py` 后，修复版 MCP 返回明确 `bridge_error`，MicroPython 探测命令无回显。Windows PnP 的 USB-SERIAL CH340 (COM4) 为 `Status=OK`、`ProblemCode=0`、驱动 `CH341SER_A64` 版本 `3.9.2024.9`。随后用户授权复位；临时 esptool 5.4.0 的只读 `chip-id` 返回 `Wrong boot mode detected (0x13)`：MCU ROM 已通过 COM4 响应，但自动复位没有进入下载模式。未烧录 Flash、读写板载文件或运行程序。舵机仍连接，进一步复位/启动前需由用户确保机构安全并手动按住 BOOT、点按 EN/RESET 进入 ROM 下载模式；随后可用 `--before no-reset` 读取芯片标识。
 
 AC-10 已完成：`esp32_panel_agent_decide` 按 broker lease 隔离待办，并区分 `agent_delegated` 与 `human_panel`。broker 30/30、MCP 控制工具 18/18、面板确认 7/7 定向测试通过；完整发行包测试 151/151 通过，validator 通过。授权重载旧 broker 后，在新 MCP 会话中恢复四足 generic `/main.py` 工作区；Agent 同会话批准工作区选择和一条只读 WLAN REPL 查询，来源均为 `agent_delegated`；`confirm-write` 下 COM4 连接无需单独确认。REPL 只发送一次，控制台读到 `STA`/`AP` 标记；结束后 COM4 已断开，Web 面板已重开且 `autoConnect=false`。假桥测试已覆盖真人面板按钮仍标为 `human_panel`。Codex 当前任务的工具目录仍需新任务/重载后刷新；真人确认与 Codex 对话侧门禁仍单独验收。
 
