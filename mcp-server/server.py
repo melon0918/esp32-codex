@@ -1308,14 +1308,14 @@ def create_server(argv: list[str] | None = None) -> tuple[FastMCP, Esp32McpTools
 
     @server.tool()
     def esp32_confirmation_status() -> dict:
-        """查询 Agent 已发起但仍等待面板用户确认的请求；不包含代码正文，也不能批准操作。"""
+        """查询当前 MCP 会话自己发起、仍等待面板决策的请求；不返回代码正文。"""
         try:
-            rows = tools.client.panel_pending_confirmations()
+            rows = tools.client.agent_pending_confirmations()
             visible = [{
                 key: row.get(key) for key in (
                     "id", "state", "action", "effect", "title", "target",
                     "workspacePath", "profile", "entry", "control_epoch",
-                    "policy_revision", "expires_in_ms",
+                    "policy_revision", "decision_source", "expires_in_ms",
                 )
             } for row in rows[:4] if isinstance(row, dict)]
             return tools._tag_bridge({"ok": True, "pending": visible})
@@ -1326,8 +1326,33 @@ def create_server(argv: list[str] | None = None) -> tuple[FastMCP, Esp32McpTools
             })
 
     @server.tool()
+    def esp32_panel_agent_decide(confirmation_id: str, decision: str) -> dict:
+        """按用户已授权范围代办当前 MCP 会话自己的面板待办；decision 为 approve 或 reject。"""
+        if not isinstance(confirmation_id, str) or not 20 <= len(confirmation_id) <= 128:
+            return tools._tag_bridge({
+                "ok": False, "errorCode": "invalid_request", "error": "确认 ID 无效。",
+            })
+        if decision not in {"approve", "reject"}:
+            return tools._tag_bridge({
+                "ok": False, "errorCode": "invalid_request", "error": "decision 必须为 approve 或 reject。",
+            })
+        try:
+            result = tools.client.agent_decide_confirmation(confirmation_id, decision=decision)
+            source = result.get("decision_source")
+            return tools._tag_bridge({
+                "ok": result.get("ok") is True,
+                "state": result.get("state"),
+                "decisionSource": source,
+            })
+        except BridgeFailure as exc:
+            return tools._tag_bridge({
+                "ok": False, "errorCode": "broker_unavailable",
+                "error": f"无法处理面板待办；原操作尚未获准执行：{str(exc)[:200]}",
+            })
+
+    @server.tool()
     def esp32_confirmation_cancel(confirmation_id: str) -> dict:
-        """取消一条待确认请求；只会阻止执行，Agent 无法通过 MCP 批准请求。"""
+        """取消当前 MCP 会话自己发起的待确认请求；取消只会阻止原操作执行。"""
         if not isinstance(confirmation_id, str) or not 20 <= len(confirmation_id) <= 128:
             return tools._tag_bridge({
                 "ok": False, "errorCode": "invalid_request", "error": "确认 ID 无效。",

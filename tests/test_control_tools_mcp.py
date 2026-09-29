@@ -217,6 +217,18 @@ class ExplicitControlToolTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.05)
         self.fail("panel did not receive the MCP confirmation request")
 
+    async def wait_for_agent_confirmation(self, session, task: asyncio.Task) -> dict[str, Any]:
+        for _ in range(120):
+            status = await object_result(await session.call_tool("esp32_confirmation_status", {}))
+            rows = status.get("pending")
+            if isinstance(rows, list) and rows:
+                return rows[0]
+            if task.done():
+                result = await task
+                raise AssertionError(f"MCP request ended before its pending confirmation was visible: {result!r}")
+            await asyncio.sleep(0.05)
+        self.fail("MCP session did not list its pending confirmation")
+
     @staticmethod
     def read_commands(log_path: Path) -> list[str]:
         if not log_path.exists():
@@ -421,10 +433,12 @@ class ExplicitControlToolTests(unittest.IsolatedAsyncioTestCase):
                     (self.workspace / "esp32-ide" / "workbench-policy.json").read_bytes()
                 ).hexdigest())
                 names = {tool.name for tool in listed.tools}
-                self.assertFalse(any("confirmation" in name and ("approve" in name or "resolve" in name) for name in names))
+                self.assertIn("esp32_panel_agent_decide", names)
+                self.assertNotIn("esp32_confirmation_resolve", names)
                 self.assertNotIn("connect", self.read_commands(command_log))
                 approved = await asyncio.to_thread(panel_api.approve_agent_confirmation, pending["id"])
                 self.assertTrue(approved["ok"])
+                self.assertEqual(approved["decisionSource"], "human_panel")
                 repeated = await asyncio.to_thread(panel_api.approve_agent_confirmation, pending["id"])
                 self.assertFalse(repeated["ok"])
                 result = await object_result(await asyncio.wait_for(task, timeout=10))
@@ -469,10 +483,7 @@ class ExplicitControlToolTests(unittest.IsolatedAsyncioTestCase):
             names = {tool.name for tool in listed.tools}
             self.assertIn("esp32_confirmation_status", names)
             self.assertIn("esp32_confirmation_cancel", names)
-            self.assertFalse(any(
-                "confirmation" in name and ("approve" in name or "resolve" in name)
-                for name in names
-            ))
+            self.assertIn("esp32_panel_agent_decide", names)
 
             task = asyncio.create_task(session.call_tool("esp32_connect", {"port": "FAKE0"}))
             try:
@@ -499,6 +510,57 @@ class ExplicitControlToolTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["ok"])
         self.assertEqual(result["errorCode"], "confirmation_expired")
         self.assertNotIn("connect", self.read_commands(command_log))
+
+    async def test_agent_decision_unblocks_its_waiting_repl_once(self) -> None:
+        script, command_log = self.write_fake_bridge(initially_connected=True)
+        backend, _panel_api = self.make_real_panel_api(script, enable_controls=True)
+        async with open_session(self.bridge_args(script, enable_controls=True, policy="confirm-write")) as session:
+            task = asyncio.create_task(session.call_tool("esp32_repl_send", {
+                "line": "print('codex_panel_agent_decision_marker')",
+            }))
+            try:
+                pending = await self.wait_for_agent_confirmation(session, task)
+                self.assertEqual(pending["effect"], "write")
+                self.assertEqual(pending["profile"], "generic")
+                self.assertEqual(pending["entry"], "/main.py")
+                decision = await object_result(await session.call_tool("esp32_panel_agent_decide", {
+                    "confirmation_id": pending["id"], "decision": "approve",
+                }))
+                self.assertTrue(decision["ok"])
+                self.assertEqual(decision["state"], "approved")
+                self.assertEqual(decision["decisionSource"], "agent_delegated")
+                result = await object_result(await asyncio.wait_for(task, timeout=10))
+            finally:
+                if not task.done():
+                    task.cancel()
+                backend.close()
+
+        self.assertTrue(result["sent"])
+        commands = self.read_commands(command_log)
+        self.assertEqual(commands.count("send"), 1)
+
+    async def test_agent_rejection_never_sends_repl(self) -> None:
+        script, command_log = self.write_fake_bridge(initially_connected=True)
+        backend, _panel_api = self.make_real_panel_api(script, enable_controls=True)
+        async with open_session(self.bridge_args(script, enable_controls=True, policy="confirm-write")) as session:
+            task = asyncio.create_task(session.call_tool("esp32_repl_send", {"line": "print(1)"}))
+            try:
+                pending = await self.wait_for_agent_confirmation(session, task)
+                decision = await object_result(await session.call_tool("esp32_panel_agent_decide", {
+                    "confirmation_id": pending["id"], "decision": "reject",
+                }))
+                self.assertTrue(decision["ok"])
+                self.assertEqual(decision["state"], "rejected")
+                self.assertEqual(decision["decisionSource"], "agent_delegated")
+                result = await object_result(await asyncio.wait_for(task, timeout=10))
+            finally:
+                if not task.done():
+                    task.cancel()
+                backend.close()
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["errorCode"], "confirmation_rejected")
+        self.assertNotIn("send", self.read_commands(command_log))
 
     async def test_pending_confirmation_is_invalidated_when_policy_revision_changes(self) -> None:
         script, command_log = self.write_fake_bridge()

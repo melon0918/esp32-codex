@@ -696,7 +696,11 @@ class PanelOperationsApi(ReadOnlyApi):
             if not 20 <= len(safe_id) <= 128:
                 raise ValueError("invalid confirmation id")
             result = self._backend.resolve_agent_confirmation(safe_id, approve=approve)  # type: ignore[attr-defined]
-            return {"ok": result.get("ok") is True, "state": _short_text(result.get("state"), 32)}
+            return {
+                "ok": result.get("ok") is True,
+                "state": _short_text(result.get("state"), 32),
+                "decisionSource": _short_text(result.get("decision_source"), 32),
+            }
         except Exception:
             return {"ok": False, "state": "unavailable"}
 

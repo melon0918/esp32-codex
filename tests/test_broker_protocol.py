@@ -428,7 +428,9 @@ class BrokerIntegrationTests(unittest.TestCase):
 
     def test_agent_confirmation_is_context_bound_expiring_and_consumed_once(self):
         client = self.make_client(backend_config=self.backend_config(profile="generic"))
+        peer = self.make_client(backend_config=self.backend_config(profile="generic"))
         client.connect()
+        peer.connect()
         current = client.request("workspace", {"action": "current"})
         request = {
             "action": "create", "operation": "write /main.py", "effect": "write",
@@ -442,13 +444,21 @@ class BrokerIntegrationTests(unittest.TestCase):
         self.assertEqual(created["state"], "pending")
         self.assertNotIn("request_digest", created)
         self.assertEqual(client.request("confirmation", {"action": "list"})["items"][0]["id"], created["id"])
+        self.assertEqual(client.request("confirmation", {"action": "agent_list"})["items"][0]["id"], created["id"])
+        self.assertEqual(peer.request("confirmation", {"action": "agent_list"})["items"], [])
+        other_lease_decision = peer.request("confirmation", {
+            "action": "agent_resolve", "id": created["id"], "decision": "approve",
+        })
+        self.assertFalse(other_lease_decision["ok"])
+        self.assertEqual(other_lease_decision["state"], "not_owner")
         with self.assertRaisesRegex(BrokerUnavailable, "another confirmation"):
             client.request("confirmation", request)
 
         approved = client.request("confirmation", {
-            "action": "resolve", "id": created["id"], "decision": "approve",
+            "action": "agent_resolve", "id": created["id"], "decision": "approve",
         })
         self.assertTrue(approved["ok"])
+        self.assertEqual(approved["decision_source"], "agent_delegated")
         wrong_digest = client.request("confirmation", {
             "action": "consume", "id": created["id"], "request_digest": "b" * 64,
         })
@@ -457,6 +467,7 @@ class BrokerIntegrationTests(unittest.TestCase):
             "action": "consume", "id": created["id"], "request_digest": "a" * 64,
         })
         self.assertEqual(consumed["state"], "consumed")
+        self.assertEqual(consumed["decision_source"], "agent_delegated")
         self.assertEqual(client.request("confirmation", {"action": "status", "id": created["id"]})["state"], "unknown")
 
         expiring = client.request("confirmation", {**request, "ttl_ms": 1000, "request_digest": "c" * 64})

@@ -15,9 +15,10 @@
 - `connect`、`run`、`interrupt` 属于控制动作；`confirm-all` 下须逐次确认，`confirm-write` 下沿用现有 DSH 语义不额外确认。
 - REPL 可以执行任意 MicroPython 代码，可能写文件或控制硬件；按写操作分类，`confirm-write` 和 `confirm-all` 下都须逐次确认。
 - `disconnect` 和 `stop` 属于紧急/释放动作，在三档策略下都不要求额外确认，但仍须检查连接状态并明确报告桥的实际语义。
-- 需确认的操作只能由 MCP 客户端向用户呈现明确操作内容，并在同一次工具调用中取得明确接受；拒绝、取消、客户端不支持或错误都必须阻止动作。不得接受 `confirmed:true`、token、nonce 等模型可提供的工具参数。
-- 本地 MCP SDK 的 elicitation API 不证明调用方已向人类展示确认。Codex UI 确认通道尚未完成实测；生产模式在这一能力验收前，对需确认操作默认拒绝。模拟客户端接受 elicitation 只验证协议分支，不能作为生产授权已验证的证据。
-- 真实桥控制工具默认不注册。只有显式添加 `--enable-control-tools` 才能发现并调用 `esp32_connect`、`esp32_disconnect`、`esp32_stop`、`esp32_run`、`esp32_interrupt`、`esp32_repl_send`；该配置不代替操作策略。真实模式下 Codex UI 人类确认通道尚未验收，`confirm-all` 的 connect/run/interrupt 和 `confirm-write`/`confirm-all` 的 REPL 必须在任何对应控制命令发出前 fail-closed。不得在真实模式把 MCP SDK elicitation 返回的 accept、模型参数、token 或 nonce 当作人类授权。
+- 真人确认必须来自经验证的人类交互通道；拒绝、取消、客户端不支持或错误都必须阻止该真人确认路径。模型提供的 `confirmed:true`、token、nonce 不构成真人批准。
+- 用户明确授权具体目标与效果范围，并要求 Agent 操作面板时，可由面板专用 Agent 决策接口代办与授权完全匹配的待确认操作。broker 必须绑定原待办的操作上下文并记录 `agent_delegated`；面板按钮决策记录 `human_panel`。Agent 代办不得宣称为真人确认，也不得扩大授权范围、修改策略或默认运行机器人；授权不明确、请求不匹配、过期、取消或错误均须阻止动作。
+- 本地 MCP SDK 的 elicitation API 不证明调用方已向人类展示确认。真实 Codex UI 真人确认通道尚未完成实测，实际需要真人决定的动作在验收前仍 fail-closed。模拟客户端接受 elicitation 只验证协议分支，不能作为生产真人授权已验证的证据。
+- 真实桥控制工具默认不注册。只有显式添加 `--enable-control-tools` 才能发现并调用 `esp32_connect`、`esp32_disconnect`、`esp32_stop`、`esp32_run`、`esp32_interrupt`、`esp32_repl_send`；该配置不代替操作策略。真实模式下 `confirm-all` 的 connect/run/interrupt 和 `confirm-write`/`confirm-all` 的 REPL 在真人渠道未验收时仍须 fail-closed；与用户授权范围匹配的 Agent 代办只可走上述独立接口，不得把 MCP elicitation accept、模型参数、token 或 nonce 作为真人授权。
 
 ## 设备与串口
 

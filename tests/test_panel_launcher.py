@@ -16,6 +16,7 @@ from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_DIR = ROOT / "mcp-server"
+PACKAGE_ROOT = ROOT if (ROOT / ".codex-plugin" / "plugin.json").is_file() else ROOT / "plugins" / "esp32-codex"
 sys.path.insert(0, str(SERVER_DIR))
 
 from panel import launcher
@@ -144,7 +145,7 @@ class PackagingContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="esp32-codex-stage8-") as temp:
             target = Path(temp) / "plugin"
             from shutil import copytree, ignore_patterns
-            copytree(ROOT, target, ignore=ignore_patterns(".venv", "__pycache__", "*.pyc"))
+            copytree(PACKAGE_ROOT, target, ignore=ignore_patterns(".venv", "__pycache__", "*.pyc"))
             manifest = json.loads((target / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
             self.assertEqual("esp32-codex", manifest["name"])
             self.assertTrue((target / "mcp-server" / "panel" / "launcher.py").is_file())
@@ -193,7 +194,7 @@ class PackagingContractTests(unittest.TestCase):
             self.assertTrue(expected.issubset(names), sorted(expected - names))
 
     def test_install_script_declares_safe_user_only_start_menu_entry(self):
-        source_path = ROOT / "scripts" / "install_personal_plugin.ps1"
+        source_path = PACKAGE_ROOT / "scripts" / "install_personal_plugin.ps1"
         source = source_path.read_text(encoding="utf-8-sig")
         self.assertTrue(source_path.read_bytes().startswith(b"\xef\xbb\xbf"))
         self.assertIn("GetFolderPath('Programs')", source)

@@ -29,7 +29,17 @@
 | `esp32_interrupt` | 无 | 向板上程序发送中断；不确认电机或舵机已安全停下 |
 | `esp32_repl_send` | `line`：最多 512 字符的单行文本 | 发送可执行的 MicroPython 行；按 `write` 操作执行策略确认，不能当作安全只读命令 |
 
-在 `--mode mock --mock-scenario control` 下，工具只更新无硬件模拟状态或记录 canned 响应。`--mode bridge` 下，只有同时明确设置 `--enable-control-tools` 才向真实桥放行相同命令；没有该 flag 时真实桥白名单仍为 `ports`、`status`。显式开启工具不等于绕过工作区策略：`confirm-all` 的 connect/run/interrupt 和 `confirm-write`/`confirm-all` 的 REPL 在 Codex UI 人类确认通道未验证前均 fail-closed；拒绝、取消、不支持或确认错误都不会发出相应命令。`disconnect` 与 `stop` 是释放/紧急动作，不要求额外确认，但结果不会宣称设备已安全停转。模型提供的 `confirmed`、token 或 nonce 不作授权依据。
+在 `--mode mock --mock-scenario control` 下，工具只更新无硬件模拟状态或记录 canned 响应。`--mode bridge` 下，只有同时明确设置 `--enable-control-tools` 才向真实桥放行相同命令；没有该 flag 时真实桥白名单仍为 `ports`、`status`。显式开启工具不等于绕过工作区策略：`confirm-all` 的 connect/run/interrupt 和 `confirm-write`/`confirm-all` 的 REPL 仍须先处理确认。用户明确授权了目标和效果范围并要求 Agent 操作面板时，Agent 可通过下面的专用决策工具代办精确待办；否则需要真人确认的真实操作在真人渠道验收前 fail-closed。拒绝、取消、不支持或确认错误都不会发出相应命令。`disconnect` 与 `stop` 是释放/紧急动作，不要求额外确认，但结果不会宣称设备已安全停转。模型提供的 `confirmed`、token 或 nonce 不作真人批准依据。
+
+## 面板待办与 Agent 代办
+
+| 工具 | 输入 | 行为 |
+|---|---|---|
+| `esp32_confirmation_status` | 无 | 仅列出当前 MCP broker lease 发起且仍待决的确认摘要，不含 REPL 正文 |
+| `esp32_confirmation_cancel` | `confirmation_id` | 取消当前 lease 发起的待办；不执行原操作 |
+| `esp32_panel_agent_decide` | `confirmation_id`、`decision` (`approve`/`reject`) | 对当前 lease 自己发起的待办作出 Agent 决策；批准后原调用继续并消费同一确认一次 |
+
+面板真人按钮决策记录为 `human_panel`；`esp32_panel_agent_decide` 记录为 `agent_delegated`。Agent 只在用户明确授权的目标/效果完整覆盖待办时批准；代办不是真人点击，也不算真人确认渠道验收。broker 按创建 lease、请求上下文、workspace/profile/entry、epoch、策略 revision 和 TTL 约束操作；错误 lease、错 ID、拒绝、过期、上下文变化或重复消费不执行设备命令。原调用等待期间可以用状态和决策工具继续处理；不要因等待超时而重放控制或 REPL 请求。
 
 ## 阶段 3b 写入与板载文件工具
 
@@ -46,7 +56,7 @@
 
 严格备份为 bridge 新增的可选 Codex 路径：MCP 在任何 mutation 前查询 `capabilities`，不支持时不发送 download/writefile/deletefile。PID 还要求原始读取 capability。请求传 `strictBackup: true` 后，由同一 bridge 命令内执行目标存在性核验、原始 bytes 读取、本地备份独占创建、flush/fsync、回读与长度/CRC 比对，全部通过才改动目标。响应中的 `targetExisted`、`backupVerified`、`backupPath`、`backupSize`、`backupCrc` 明确表达状态；MCP 不根据旧 `backup` 字段推断成功。旧 DSH 调用不传 strict 参数，原行为保持不变。
 
-策略按操作副作用分类：board list/read 是 `control`，在 `confirm-all` 下需逐次确认；下载、board write/delete 和 PID set 是 `write`，在 `confirm-write` 与 `confirm-all` 下需逐次确认。真实 MCP 的确认通道未验证期间，所有需确认的真实操作 fail-closed。严格备份门槛不受 `auto` 策略影响，始终执行。
+策略按操作副作用分类：board list/read 是 `control`，在 `confirm-all` 下需逐次处理；下载、board write/delete 和 PID set 是 `write`，在 `confirm-write` 与 `confirm-all` 下需逐次处理。用户明确授权范围内可走上述 Agent 代办；实际需要真人决定的真实操作在真人确认渠道验收前 fail-closed。严格备份门槛不受 `auto` 策略影响，始终执行。
 
 ## 阶段 3a mock-only 控制/策略测试入口
 

@@ -1,6 +1,8 @@
-# 2026-09-29 最新状态：RCT-01–06 完成；AC-09 / MD-P11 进行中
+# 2026-09-29 最新状态：RCT-01–06 完成；AC-09 / MD-P11 进行中；AC-10 完成
 
-AC-09 broker 恢复修复已在源码和生成插件包验证：失去 lease 后安全只读查询可建立新 lease；控制/文件请求不自动重放；插件包完整测试 149/149 通过。源树、GitHub 克隆和个人安装副本的 broker client 哈希一致。当前 Codex MCP 工具的状态/端口/快照调用仍返回 `client has no broker lease`；短暂 fresh BrokerClient 可取得只读 lease 并确认共享 bridge 已断开、COM4 可枚举。Web 面板打开且可见，Windows 拒绝置前请求；板端 `/identity` 主机请求超时，MD-P11 身份、租约和网络验收仍未完成。独立源码已推送 commit `51f46c3`，PR [#1](https://github.com/melon0918/esp32-codex/pull/1) 保持打开。修复及验收细节见专项计划和当日日志。
+AC-10 已完成：`esp32_panel_agent_decide` 按 broker lease 隔离待办，并区分 `agent_delegated` 与 `human_panel`。broker 30/30、MCP 控制工具 18/18、面板确认 7/7 定向测试通过；完整发行包测试 151/151 通过，validator 通过。授权重载旧 broker 后，在新 MCP 会话中恢复四足 generic `/main.py` 工作区；Agent 同会话批准工作区选择和一条只读 WLAN REPL 查询，来源均为 `agent_delegated`；`confirm-write` 下 COM4 连接无需单独确认。REPL 只发送一次，控制台读到 `STA`/`AP` 标记；结束后 COM4 已断开，Web 面板已重开且 `autoConnect=false`。假桥测试已覆盖真人面板按钮仍标为 `human_panel`。Codex 当前任务的工具目录仍需新任务/重载后刷新；真人确认与 Codex 对话侧门禁仍单独验收。
+
+AC-09 broker 恢复修复已在源码和生成插件包验证：失去 lease 后安全只读查询可建立新 lease；控制/文件请求不自动重放；插件包完整测试 149/149 通过。源树、GitHub 克隆和个人安装副本的 broker client SHA-256 一致。当前 Codex MCP 工具的状态/端口/快照调用仍返回 `client has no broker lease`；短暂 fresh BrokerClient 可取得只读 lease 并确认共享 bridge 已断开、COM4 可枚举。Web 面板打开且可见，Windows 拒绝置前请求。板端 `/identity` 主机请求超时，MD-P11 身份/租约与网络验收仍未完成。独立源码已推送 commit `51f46c3`，PR [#1](https://github.com/melon0918/esp32-codex/pull/1) 已创建并保持打开。修复及验收细节见专项计划和当日日志。
 
 UI-13 已完成：Web 面板现在保留桥/Broker 超时或传输失败的“结果未知”语义，并提示先刷新状态、不要重放。项目源和自包含发行包的控制/确认定向回归各 23/23 通过；无模拟 broker 残留。项目级令牌/PID 握手简化与快照失败时的模式标记仍未处理。
 
@@ -28,11 +30,11 @@ UI-12 当时通过另一 API 实例取得真实只读快照：四足 generic `/m
 
 ## AC-08 实机验收（限定范围完成）
 
-AC-00–AC-07 的开发及 mock/假桥隔离验证记录保留。Codex 已切回 Windows 原生；个人插件 MCP 配置使用 Windows `cmd.exe`、launcher 与工作目录。当前真实 MCP 会话发现 36 个工具，`source=bridge_process`、`simulated=false`。共享工作区已由幻尔切至四足目录 [本机路径] MCP 读取同一工作区/epoch。
+AC-00–AC-07 的开发及 mock/假桥隔离验证记录保留。Codex 已切回 Windows 原生；个人插件 MCP 配置使用 Windows `cmd.exe` 与 launcher。当前真实 MCP 会话发现 36 个工具，`source=bridge_process`、`simulated=false`。共享工作区已由幻尔切至已识别的四足工作区，profile=`generic`、entry=`/main.py`、preset=`quad`，面板与 MCP 读取同一工作区/epoch。
 
-COM4（USB-SERIAL CH340）连接成功，桥识别 `MicroPython v1.24.1 on 2024-11-29 esp32`；真实板载目录列出 7 个文件，含 `/main.py`。对唯一临时探针 `/codex_ac08_probe_20260928.py` 完成首次写入、读回 SHA-256/字节一致校验、再以 `backupVerified=true` 的严格备份路径删除；板端复查已无探针。删除操作生成的 74-byte 本地备份 [本机路径] 与探针 SHA-256 一致，暂留作验收证据。
+COM4（USB-SERIAL CH340）连接成功，桥识别 `MicroPython v1.24.1 on 2024-11-29 esp32`；真实板载目录列出 7 个文件，含 `/main.py`。对临时探针完成写入、回读校验，再以 `backupVerified=true` 的严格备份路径删除；板端复查已无探针。严格备份留在本机工作区，未加入插件仓库。
 
-板载 `/main.py` 读取为 1301 bytes、SHA-256 `3af1f9023e643c0819b2cf1a535a7f7da9a20950a2007a7a6190245341d42caa`；本地入口是 2681 bytes，摘要不同，因此没有覆盖或运行主程序。未运行机器人程序。验收后已断开 COM4，最终 `connected=false`；Web 面板仍打开且已前置。用户明确授权的操作由 Agent 经面板专用决策接口按目标/效果/epoch 精确核对后代为处理；这不是用户手动点按，不能算作“真人确认渠道”验收。完整证据见 `devlog/2026-09-28.md`。AC-09 待办。
+板载 `/main.py` 与本地入口不同，因此没有覆盖、下载或运行主程序。未运行机器人程序。验收后已断开 COM4，最终 `connected=false`；Web 面板仍打开。用户明确授权的操作由 Agent 经面板专用决策接口按目标/效果/epoch 精确核对后代为处理；这不是用户手动点按，不能算作“真人确认渠道”验收。完整证据见 `devlog/2026-09-28.md`。AC-09 待办。
 
 
 ## UI-11：WSL 启动路径修复（历史验收记录）
@@ -41,7 +43,7 @@ COM4（USB-SERIAL CH340）连接成功，桥识别 `MicroPython v1.24.1 on 2024-
 
 ## UI-10 真机版交付记录（历史验收快照）
 
-UI-10 交付记录（2026-09-28 历史快照）：个人安装与 Codex 插件缓存版本和插件 manifest 一致；`codex plugin list --json` 显示 `esp32-codex@personal` 已安装并启用。个人 `.mcp.json` 指向 `launch_bridge.cmd`，工作目录为 [本机路径] pyserial 3.5。主开始菜单入口启动真实 Web 面板，MOCK Web 与 Tk 回退保留；`esp32_open_panel(ui="web")` 返回 `simulated=false`、`autoConnect=false`，实际窗口进程标题为“ESP32 工作台”。从安装包真实启动器建立 MCP ClientSession，26 个工具可发现，COM4 返回 `source=bridge_process`、`simulated=false`；连接状态读到 `MicroPython v1.24.1 on 2024-11-29 esp32`，随后断开并确认 `connected=false`。启动器自动选择工作区检测到的 hiwonder profile；断开响应 `physicalStopConfirmed=false`。没有运行程序、REPL 或进行板载文件操作。完整测试 114/114、启动/打包定向测试 9/9、官方插件 validator 与个人包/缓存 12 项关键哈希均通过。Codex CLI 原来配置的 `personal` marketplace 路径是 WSL `[本机路径]`，导致 marketplace 加载失败；经 CLI 移除错误 override 后默认个人 marketplace 正常加载并成功刷新版本。Computer Use 截图因 node_repl 不接受当前 WSL `file:///mnt/d/...` 工作目录未能采集；面板进程已实际启动，需从新线程加载新 schema。
+UI-10 交付记录（2026-09-28 历史快照）：个人安装与 Codex 插件缓存版本和插件 manifest 一致；`codex plugin list --json` 显示个人 marketplace 中的 `esp32-codex` 已安装并启用。个人 `.mcp.json` 指向 `launch_bridge.cmd`；固定依赖 pyserial 3.5。主开始菜单入口启动真实 Web 面板，MOCK Web 与 Tk 回退保留；`esp32_open_panel(ui="web")` 返回 `simulated=false`、`autoConnect=false`，实际窗口进程标题为“ESP32 工作台”。从安装包真实启动器建立 MCP ClientSession，26 个工具可发现，COM4 返回 `source=bridge_process`、`simulated=false`；连接状态读到 `MicroPython v1.24.1 on 2024-11-29 esp32`，随后断开并确认 `connected=false`。启动器自动选择工作区检测到的 hiwonder profile；断开响应 `physicalStopConfirmed=false`。没有运行程序、REPL 或进行板载文件操作。完整测试 114/114、启动/打包定向测试 9/9、官方插件 validator 与个人包/缓存 12 项关键哈希均通过。旧 marketplace override 指向已过时的 WSL 个人路径，导致 marketplace 加载失败；移除该 override 后默认个人 marketplace 正常加载并成功刷新版本。Computer Use 截图因 node_repl 不接受当前 WSL 文件系统 URI 未能采集；面板进程已实际启动，需从新线程加载新 schema。
 
 2026-09-26 UI-9 个人安装与默认网页面板切换已完成 mock 范围验收。个人安装版本为 `0.2.0+codex.20260926151926`，安装前完整备份已校验；marketplace 注册保持原样。开始菜单主入口运行 Web MOCK，Tk 回退入口显式运行 Tk MOCK；两种实际启动器都成功打开窗口并在关闭后退出 0。默认 WebView2 截图 `web-panel/review/ui9-personal-default.png` 为 874×929 物理像素、DPI 192，中文清晰、MOCK 标识可见。默认与 Tk `--probe` 都报告 `autoConnect=false`、`guiCreated=false`；MCP 工具测试隔离下发现 `esp32_open_panel` 的默认 `ui=web`，不会在测试模式启动窗口。Windows 定向 launcher 9/9、完整 mock/假桥测试 114/114、插件结构 validator 通过；源码/开发包/个人安装 13 个关键文件哈希匹配，pywebview 可导入。PowerShell 5.1 需安装脚本带 UTF-8 BOM，已修正并复装。没有启动真实 bridge、连接串口、操作 ESP32 或修改 DSH。当前 Codex CLI 不在可用 PATH/安装位置，未能刷新 Codex 插件缓存；现有 MCP 服务进程也未中断或重启，新工具 schema 需由 Codex 新线程/重载后获取。实机只读仍等设备及工作区，控制、REPL 与写板仍需单独授权。
 

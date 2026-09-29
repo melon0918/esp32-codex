@@ -196,6 +196,7 @@ class BrokerHost:
                 "lease_count": lease_count,
                 "idle_timeout": min(float(requested_idle), self.idle_timeout),
             })
+            lease_identity = secrets.token_urlsafe(24)
             while True:
                 message = connection.recv_json()
                 kind = message.get("type")
@@ -235,7 +236,7 @@ class BrokerHost:
                     connection.send_json({"ok": False, "error": "arguments must be an object"})
                     continue
                 try:
-                    result = self._dispatch(operation, args)
+                    result = self._dispatch(operation, args, lease_identity=lease_identity)
                     connection.send_json({"ok": True, "result": result})
                 except Exception as exc:
                     connection.send_json({"ok": False, "error": str(exc)[:512]})
@@ -331,13 +332,15 @@ class BrokerHost:
             == {key: value for key, value in right.items() if key not in mutable}
         )
 
-    def _dispatch(self, operation: Any, arguments: dict[str, Any]) -> dict[str, Any]:
+    def _dispatch(
+        self, operation: Any, arguments: dict[str, Any], *, lease_identity: str | None = None,
+    ) -> dict[str, Any]:
         if operation not in {"status", "ports", "console", "control", "file", "workspace", "confirmation"}:
             raise ValueError("unsupported broker operation")
         if operation == "workspace":
             return self._workspace_dispatch(arguments)
         if operation == "confirmation":
-            return self._confirmation_dispatch(arguments)
+            return self._confirmation_dispatch(arguments, lease_identity=lease_identity)
         if operation in {"status", "ports"} and arguments:
             raise ValueError("read operation does not accept arguments")
         if operation == "console":
@@ -611,11 +614,14 @@ class BrokerHost:
             "profile": item["profile"], "entry": item["entry"],
             "control_epoch": item["control_epoch"],
             "policy_revision": item["policy_revision"],
+            "decision_source": item.get("decision_source"),
             "expires_in_ms": max(0, int((item["expires_at"] - time.monotonic()) * 1000)),
         }
 
-    def _confirmation_dispatch(self, args: dict[str, Any]) -> dict[str, Any]:
-        """One-shot human decisions; the broker never exposes approval as an MCP tool."""
+    def _confirmation_dispatch(
+        self, args: dict[str, Any], *, lease_identity: str | None = None,
+    ) -> dict[str, Any]:
+        """Bind one-shot Agent decisions to their creating MCP lease; panel decisions remain separate."""
         action = args.get("action")
         if action == "create":
             expected = {
@@ -679,25 +685,29 @@ class BrokerHost:
                         "target": args["target"],
                         "impact": args["impact"],
                         "request_digest": digest.lower(),
+                        "owner_lease_identity": lease_identity,
+                        "decision_source": None,
                         "expires_at": time.monotonic() + ttl_ms / 1000,
                     }
                     self._pending_confirmation = item
                     return self._confirmation_public(item)
-        if action not in {"list", "status", "resolve", "consume", "cancel"}:
+        if action not in {"list", "agent_list", "status", "resolve", "agent_resolve", "consume", "cancel"}:
             raise ValueError("unsupported confirmation action")
-        if action == "list" and set(args) != {"action"}:
+        if action in {"list", "agent_list"} and set(args) != {"action"}:
             raise ValueError("invalid confirmation list schema")
-        if action != "list" and set(args) != {"action", "id"} | ({"decision"} if action == "resolve" else set()) | ({"request_digest"} if action == "consume" else set()):
+        if action not in {"list", "agent_list"} and set(args) != {"action", "id"} | ({"decision"} if action in {"resolve", "agent_resolve"} else set()) | ({"request_digest"} if action == "consume" else set()):
             raise ValueError("invalid confirmation action schema")
+        if action in {"agent_list", "agent_resolve", "status", "consume", "cancel"} and not lease_identity:
+            raise ValueError("confirmation caller lease is unavailable")
         confirmation_id = args.get("id")
-        if action != "list" and (not isinstance(confirmation_id, str) or not 20 <= len(confirmation_id) <= 128):
+        if action not in {"list", "agent_list"} and (not isinstance(confirmation_id, str) or not 20 <= len(confirmation_id) <= 128):
             raise ValueError("invalid confirmation id")
         with self._operation_lock:
             current = self._confirmation_context()
             with self._confirmation_lock:
                 item = self._pending_confirmation
                 if item is None:
-                    return {"state": "unknown"} if action != "list" else {"items": []}
+                    return {"state": "unknown"} if action not in {"list", "agent_list"} else {"items": []}
                 if time.monotonic() >= item["expires_at"] and item["state"] in {"pending", "approved"}:
                     item["state"] = "expired"
                 elif any(item.get(key) != current.get(key) for key in current):
@@ -706,18 +716,31 @@ class BrokerHost:
                 if action == "list":
                     visible = [self._confirmation_public(item)] if item["state"] == "pending" else []
                     return {"items": visible}
+                if action == "agent_list":
+                    visible = (
+                        [self._confirmation_public(item)]
+                        if item["state"] == "pending" and item["owner_lease_identity"] == lease_identity
+                        else []
+                    )
+                    return {"items": visible}
                 if item["id"] != confirmation_id:
                     return {"state": "unknown"}
+                if action in {"status", "agent_resolve", "consume", "cancel"} and item["owner_lease_identity"] != lease_identity:
+                    return {"ok": False, "state": "not_owner"}
                 if action == "status":
                     return self._confirmation_public(item)
-                if action == "resolve":
+                if action in {"resolve", "agent_resolve"}:
                     decision = args.get("decision")
                     if decision not in {"approve", "reject"}:
                         raise ValueError("invalid confirmation decision")
                     if item["state"] != "pending":
                         return {"ok": False, "state": item["state"]}
                     item["state"] = "approved" if decision == "approve" else "rejected"
-                    return {"ok": True, "state": item["state"]}
+                    item["decision_source"] = "human_panel" if action == "resolve" else "agent_delegated"
+                    return {
+                        "ok": True, "state": item["state"],
+                        "decision_source": item["decision_source"],
+                    }
                 if action == "consume":
                     digest = args.get("request_digest")
                     if not isinstance(digest, str) or not secrets.compare_digest(digest.lower(), item["request_digest"]):
@@ -725,7 +748,7 @@ class BrokerHost:
                     if item["state"] != "approved":
                         return {"ok": False, "state": item["state"]}
                     self._pending_confirmation = None
-                    return {"ok": True, "state": "consumed"}
+                    return {"ok": True, "state": "consumed", "decision_source": item["decision_source"]}
                 if action == "cancel":
                     if item["state"] in {"pending", "approved"}:
                         item["state"] = "cancelled"

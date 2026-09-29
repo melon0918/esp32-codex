@@ -1,8 +1,8 @@
 # 开发文档索引
 
-独立面板 UI 开发与运行状态见 [当前计划](plan.md)、[网页风格面板开发计划](web-panel-plan.md)、[面板实机点击验收计划](panel-real-click-test-plan.md) 和 [当前状态](status.md)；Agent 控制能力扩展及 AC-00–AC-09 验收见 [Agent 完整控制面板计划](esp32_agent_panel_control_plan.md)。技术规范、需求和独立验收标准分别见 [技术规范](standards.md)、[需求](requirements.md) 与 [独立验收提示](test_prompt.md)。
+独立面板 UI 开发与运行状态见 [当前计划](plan.md)、[网页风格面板开发计划](web-panel-plan.md)、[面板实机点击验收计划](panel-real-click-test-plan.md) 和 [当前状态](status.md)；Agent 控制能力扩展及 AC-00–AC-10 验收见 [Agent 完整控制面板计划](esp32_agent_panel_control_plan.md)。技术规范、需求和独立验收标准分别见 [技术规范](standards.md)、[需求](requirements.md) 与 [独立验收提示](test_prompt.md)。
 
-项目：ESP32 Codex 插件。UI 独立面板步骤 0–10 已交付，UI-11 的 WSL 启动路径修复已通过协议握手验证；UI-12 真实桥租约配置兼容已修复并完成双端 broker 回归；UI-13 已修复面板对不确定控制结果的提示并通过定向回归。RCT-01–06 面板实机点击验收已完成，Agent 确认闭环、MCP 启动入口、工作区同步及窗口生命周期均已核对。AC-00–08 已完成限定范围实施/验收；AC-09 正在按机器人项目 MD-P11 进行单机真机联调。MD-P12 多设备课堂验收仍未批准。当前测试、实机状态和真人确认渠道边界见 [当前状态](status.md) 与当日日志。
+项目：ESP32 Codex 插件。UI 独立面板步骤 0–10 已交付，UI-11 的 WSL 启动路径修复已通过协议握手验证；UI-12 真实桥租约配置兼容已修复并完成双端 broker 回归；UI-13 已修复面板对不确定控制结果的提示并通过定向回归。RCT-01–06 面板实机点击验收已完成，Agent 确认闭环、MCP 启动入口、工作区同步及窗口生命周期均已核对。AC-00–08 已完成限定范围实施/验收；AC-09 正在按机器人项目 MD-P11 进行单机真机联调；AC-10-02 的 Agent 决策工具及定向验证已完成，打包和真机验收待办。MD-P12 多设备课堂验收仍未批准。当前测试、实机状态和真人确认渠道边界见 [当前状态](status.md) 与当日日志。
 
 | 文件 | 用途 |
 | --- | --- |

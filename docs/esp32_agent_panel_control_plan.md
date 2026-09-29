@@ -1,8 +1,8 @@
 # ESP32 Codex：Agent 完整控制面板开发计划
 
-日期：2026-09-29。状态：AC-00–AC-08 已完成开发实现与限定范围验收；RCT-01–06 面板实机点击验收已完成。AC-09 的 lease 恢复修复已通过完整包测试并提交到 GitHub PR #1；机器人仓库 MD-P11 继续进行，但当前 Codex MCP 查询无 broker lease、板端 `/identity` 超时。用户要求 Web 为正式面板；Tk 暂留兼容回退。Windows 原生 MCP、Agent 确认处理、COM4 共享状态与窗口生命周期均已实证；Codex 对话侧真实确认渠道仍未验收。
+日期：2026-09-29。状态：AC-00–AC-08 已完成开发实现与限定范围验收；RCT-01–06 面板实机点击验收已完成。AC-09 的 lease 恢复修复已通过完整包测试并提交到 GitHub PR #1；机器人仓库 MD-P11 继续进行，但本轮 MCP 查询无 broker lease、板端 `/identity` 超时。AC-10-01–03 已完成：Agent 决策工具通过 55 项定向测试、发行包校验和 COM4 实机等待闭环；Agent 在同一会话批准工作区选择、连接和单条只读 WLAN REPL 请求，来源记录为 `agent_delegated`，查询仅执行一次并取得控制台标记，结束时串口断开。用户要求 Web 为正式面板；Tk 暂留兼容回退。Codex 对话侧真人确认渠道仍未验收。
 
-本计划已从机器人项目迁入本仓库 docs/esp32_agent_panel_control_plan.md，作为 ESP32 Codex 插件的独立开发计划；原维护源位于 [本机路径] 路径 [本机路径] Git 仓库，源树未发现 AGENTS.md。维护源与插件缓存分开，缓存不直接编辑。修改前创建的维护源快照 [本机路径] 排除个人 .mcp.json 和 .venv。此计划记录 MD-P11 的插件工具依赖改造，不改变机器人的多设备协议，也不合并到 MD-P12。
+本计划已从机器人项目迁入本仓库 docs/esp32_agent_panel_control_plan.md，作为 ESP32 Codex 插件的独立开发计划；原维护源为本机用户级插件目录，不是 Git 仓库，源树未发现 AGENTS.md。维护源与插件缓存分开，缓存不直接编辑。修改前已创建排除个人配置和虚拟环境的维护源快照。此计划记录 MD-P11 的插件工具依赖改造，不改变机器人的多设备协议，也不合并到 MD-P12。
 
 ## 1. 问题与已核实证据
 
@@ -77,6 +77,26 @@ AC-01 另外确认两项必须修复的跨客户端缺陷：`BrokerHost._workspa
 - 若宿主支持已授权范围的受信会话授权，应绑定工作区、效果、有效期及撤销方式，减少重复确认；普通聊天文字、模型生成 token 不自行充当 broker 的可信凭证。
 - 缺少可信确认渠道时保留明确阻塞原因；不得声称整个“完整控制”已验收。需要人工决策与需要用户代替 Agent 操作面板应在 UI/响应中清楚区分。
 
+### 4.3.1 AC-10 Agent 面板代办决策
+
+问题证据：面板 backend/Web/Tk 已实现 `approve_agent_confirmation`/`reject_agent_confirmation`，MCP 只有待办查询和取消工具；`esp32_repl_send` 在受策略保护时同步等待最多 120 秒。因此 Codex Agent 无法在已获授权的工作流中操作面板现有决策入口，最终只能等人工点击或超时。
+
+决策合同：
+
+- 新增显式的面板专用 Agent 决策工具，供 Agent 对自己正在处理、且落在用户明确授权目标和效果范围内的待确认请求批准或拒绝；不将通用 broker `confirmation resolve` 作为任意 MCP 授权工具暴露。
+- 决策沿用当前待办 ID、目标/影响摘要、workspace/profile/entry、control epoch、policy revision、请求摘要及 TTL 绑定；拒绝、过期、上下文变化、请求不匹配、重复消费和 broker 不可用均不执行原操作。
+- broker/响应记录决策来源 `agent_delegated` 或 `human_panel`。Agent 代办不是真人点按，不能据此宣称真人确认渠道已验收；真人面板按钮仍记录为 `human_panel`。Codex 对话 elicitation 不能以模型参数、token 或 nonce 模拟真人确认。
+- Agent 只在已知用户授权范围完整覆盖该待办时作出决策；授权不明或请求超出目标/效果范围时拒绝或取消。不得借此改策略、扩大范围或把运行机器人默认为已授权。
+- 尽量复用当前等待请求和并发 MCP 调用，不重放设备命令。若 MCP transport 实测无法在原调用等待期间接收决策，再改为有明确 operation ID 的 prepare/decide/resume 流程；未知结果不得自动重发。
+
+AC-10 按以下单步阶段执行，每阶段记录当日日志并验收后再前进：
+
+| 阶段 | 目标与验收 | 状态 |
+|---|---|---|
+| AC-10-01 | 同步需求、安全规范、架构、技术规范与本计划中的授权来源合同；明确代办与真人确认的区别及失败条件 | 已完成：文档交叉核对通过 |
+| AC-10-02 | 暴露面板专用 Agent 决策 MCP 工具；broker 记录决策来源，并限制待办归属/请求上下文；MCP Agent 可在真实等待流程中调用，不改策略绕过 | 已完成：源码实现及 55 项定向验证通过；发行包已更新，独立新 MCP 会话发现决策工具；完整包测试 151/151 通过 |
+| AC-10-03 | 假桥验证批准、拒绝、过期、上下文/请求错配、重复消费与并发调用；再用用户已授权的安全 REPL 查询验收无需逐次手动点击、仅执行一次且输出可读。完整区分 Agent 代办与真人批准 | 已完成：更新 broker 重载后，同一 MCP 会话中 Agent 代办工作区选择及 REPL 确认，来源为 `agent_delegated`；`confirm-write` 下连接无需单独确认。REPL 发送一次、控制台得到 `STA`/`AP` 标记；结束时已断开，面板以 `autoConnect=false` 重开 |
+
 ### 4.4 长任务、错误与秘密数据
 
 - 长任务返回 operation_id，可查询阶段及有界事件；重试先查询，不能盲目重放 REPL、下载并运行或运动。服务重启后的未知结果必须显式报告。
@@ -87,7 +107,7 @@ AC-01 另外确认两项必须修复的跨客户端缺陷：`BrokerHost._workspa
 
 ## 5. 单 Agent 分步实施
 
-一次完成并验收一项，更新本仓库 status/devlog 后再推进。AC-00–AC-07 已完成开发和对应隔离验证；AC-08 已在用户授权范围内完成单板真机验收，详细证据见当日日志。真人手动确认渠道仍未验收；AC-09 待办。
+一次完成并验收一项，更新本仓库 status/devlog 后再推进。AC-00–AC-07 已完成开发和对应隔离验证；AC-08 已在用户授权范围内完成单板真机验收，详细证据见当日日志。真人手动确认渠道仍未验收；AC-09 正按 MD-P11 推进；AC-10-01–03 已完成，真人确认来源保持独立。
 
 | 步骤 | 交付 | 依赖及退出条件 |
 |---|---|---|
@@ -137,4 +157,4 @@ AC-01 另外确认两项必须修复的跨客户端缺陷：`BrokerHost._workspa
 
 完成标准：全部面板能力有可用 Agent 入口；工作区切换和真实策略读取在当前 Windows 原生场景可用；MCP 与面板共享状态且不会互相阻塞；授权/确认、备份、并发和生命周期验收通过；正式安装后能以结构化接口恢复 MD-P11。
 
-AC-00–AC-07 已完成开发实现与本地隔离验证。AC-07 修复了 standalone 源布局下的测试路径问题；Windows 临时 Python 环境全套 unittest discover -s tests -v 142/142，launcher + strict-backup 定向 16/16；临时包 MCP 工具发现和 Web probe 通过（默认不建窗、不自动连接）。插件工具文档与 Agent skill 已更新。验证使用临时完整源树；未修改个人安装/插件缓存，也未做 rollback 安装演练。以上为 AC-07 历史验收。AC-08 最新实机结果：Windows 原生安装配置可启动 MCP；桥共享工作区切为 [本机路径] 返回 MicroPython v1.24.1，随后已断开；板载列出 7 项，`/main.py` 为 1301 bytes、SHA-256 `3af1f9023e643c0819b2cf1a535a7f7da9a20950a2007a7a6190245341d42caa`。临时注释探针 74 bytes 写入并回读完全一致，随后在 `backupVerified=true` 后删除；板端复查无探针，本地严格备份留在工作区根目录。板载 `/main.py` 与本地 2681-byte 源码不同，没有覆盖、下载或运行机器人程序。用户明确要求 Agent 控制面板并授权桥连接/固件读写，Agent 经面板专用决策接口处理与授权范围完全匹配的请求；未由真人点按，不计作真人确认渠道验收。MCP 面板 launcher 首次只报告 `launchRequested`，随后通过 Windows 原生 `pythonw.exe` 打开面板并核对共享工作区；验收后面板可见但不在前台，COM4 `connected=false`。AC-09 待办；Web 为正式面板，Tk 暂留兼容回退。
+AC-00–AC-07 已完成开发实现与本地隔离验证。AC-07 修复了 standalone 源布局下的测试路径问题；Windows 临时 Python 环境全套 unittest discover -s tests -v 142/142，launcher + strict-backup 定向 16/16；临时包 MCP 工具发现和 Web probe 通过（默认不建窗、不自动连接）。插件工具文档与 Agent skill 已更新。验证使用临时完整源树；未修改个人安装/插件缓存，也未做 rollback 安装演练。以上为 AC-07 历史验收。AC-08 最新实机结果：Windows 原生安装配置可启动 MCP；共享工作区为已识别的四足工作区，profile=`generic`、entry=`/main.py`；COM4 返回 MicroPython v1.24.1，随后已断开。板载目录读取成功；临时探针经严格备份后完成写入、回读和删除，板端复查无探针，备份保留在本机工作区。板载 `/main.py` 与本地入口不同，因此没有覆盖、下载或运行机器人程序。用户明确要求 Agent 控制面板并授权桥连接/固件读写，Agent 经面板专用决策接口处理与授权范围完全匹配的请求；未由真人点按，不计作真人确认渠道验收。MCP 面板 launcher 首次只报告 `launchRequested`，随后通过 Windows 原生 `pythonw.exe` 打开面板并核对共享工作区；验收后面板可见但不在前台，COM4 `connected=false`。AC-09 待办；Web 为正式面板，Tk 暂留兼容回退。

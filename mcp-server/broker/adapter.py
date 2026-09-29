@@ -298,6 +298,26 @@ class BrokerBridgeClient:
         except BrokerUnavailable as exc:
             raise BridgeFailure(str(exc)) from exc
 
+    def agent_pending_confirmations(self) -> list[dict[str, Any]]:
+        """Return pending requests created by this MCP broker lease only."""
+        self.start()
+        try:
+            result = self._broker.request("confirmation", {"action": "agent_list"})
+        except BrokerUnavailable as exc:
+            raise BridgeFailure(str(exc)) from exc
+        rows = result.get("items")
+        return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+    def agent_decide_confirmation(self, confirmation_id: str, *, decision: str) -> dict[str, Any]:
+        """Make an explicitly attributed Agent decision on this MCP lease's pending request."""
+        self.start()
+        try:
+            return self._broker.request("confirmation", {
+                "action": "agent_resolve", "id": confirmation_id, "decision": decision,
+            })
+        except BrokerUnavailable as exc:
+            raise BridgeFailure(str(exc)) from exc
+
     def confirmation_consume(self, confirmation_id: str, request_digest: str) -> dict[str, Any]:
         """Consume a one-time approval after the server's exact request digest matches."""
         self.start()
