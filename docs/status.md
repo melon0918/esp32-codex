@@ -4,6 +4,8 @@ UI-14 连接诊断：COM4 的 CH340 枚举正常且可由 pyserial 约 0.01 秒�
 
 2026-09-29 重启复测：重启后共享工作区回落到 IDE 根目录 `hiwonder`/`/corex.py`，未在身份不匹配时连接；经 Agent 面板决策切换回四足 `generic`/`/main.py` 后，修复版 MCP 返回明确 `bridge_error`，MicroPython 探测命令无回显。Windows PnP 的 USB-SERIAL CH340 (COM4) 为 `Status=OK`、`ProblemCode=0`、驱动 `CH341SER_A64` 版本 `3.9.2024.9`。随后用户授权复位；临时 esptool 5.4.0 的只读 `chip-id` 返回 `Wrong boot mode detected (0x13)`：MCU ROM 已通过 COM4 响应，但自动复位没有进入下载模式。未烧录 Flash、读写板载文件或运行程序。舵机仍连接，进一步复位/启动前需由用户确保机构安全并手动按住 BOOT、点按 EN/RESET 进入 ROM 下载模式；随后可用 `--before no-reset` 读取芯片标识。
 
+用户手动进入 ROM 下载模式后，`esptool --before no-reset chip-id` 成功识别 ESP32-D0WD-V3 revision 3.1；`flash-id` 成功识别 4 MB Flash。只读分区表显示 `factory` 应用分区位于 `0x10000`、大小 `0x1f0000`，`vfs` 分区为 `0x200000`、大小 2 MB；应用头有 ESP32 镜像标记。芯片当前仍留在 ROM 下载模式，桥保持断开。未验证应用镜像完整性、MicroPython 启动或 REPL；在机构固定/舵机安全前不退出 ROM 并启动板载程序。
+
 AC-10 已完成：`esp32_panel_agent_decide` 按 broker lease 隔离待办，并区分 `agent_delegated` 与 `human_panel`。broker 30/30、MCP 控制工具 18/18、面板确认 7/7 定向测试通过；完整发行包测试 151/151 通过，validator 通过。授权重载旧 broker 后，在新 MCP 会话中恢复四足 generic `/main.py` 工作区；Agent 同会话批准工作区选择和一条只读 WLAN REPL 查询，来源均为 `agent_delegated`；`confirm-write` 下 COM4 连接无需单独确认。REPL 只发送一次，控制台读到 `STA`/`AP` 标记；结束后 COM4 已断开，Web 面板已重开且 `autoConnect=false`。假桥测试已覆盖真人面板按钮仍标为 `human_panel`。Codex 当前任务的工具目录仍需新任务/重载后刷新；真人确认与 Codex 对话侧门禁仍单独验收。
 
 AC-09 broker 恢复修复已在源码和生成插件包验证：失去 lease 后安全只读查询可建立新 lease；控制/文件请求不自动重放；插件包完整测试 149/149 通过。源树、GitHub 克隆和个人安装副本的 broker client SHA-256 一致。当前 Codex MCP 工具的状态/端口/快照调用仍返回 `client has no broker lease`；短暂 fresh BrokerClient 可取得只读 lease 并确认共享 bridge 已断开、COM4 可枚举。Web 面板打开且可见，Windows 拒绝置前请求。板端 `/identity` 主机请求超时，MD-P11 身份/租约与网络验收仍未完成。独立源码已推送 commit `51f46c3`，PR [#1](https://github.com/melon0918/esp32-codex/pull/1) 已创建并保持打开。修复及验收细节见专项计划和当日日志。
