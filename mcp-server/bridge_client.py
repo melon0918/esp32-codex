@@ -29,7 +29,7 @@ FILE_COMMANDS = {"capabilities", "download", "writefile", "deletefile", "listfil
 COMMAND_TIMEOUTS = {
     "ports": 8.0,
     "status": 15.0,
-    "connect": 15.0,
+    "connect": 30.0,
     "disconnect": 15.0,
     "stop": 15.0,
     "run": 12.0,

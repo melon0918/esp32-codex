@@ -1,6 +1,6 @@
 {
   "name": "esp32-codex",
-  "version": "0.2.0+codex.20260928030205",
+  "version": "0.2.0+codex.20260929070347",
   "description": "\u7528\u4e8e\u771f\u5b9e ESP32 MicroPython \u8bbe\u5907\u7684 Codex \u5de5\u5177\u4e0e\u7d27\u51d1\u63a7\u5236\u9762\u677f\u3002",
   "author": {
     "name": "ESP32 Codex"

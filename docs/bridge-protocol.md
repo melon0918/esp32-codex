@@ -54,7 +54,8 @@ DSH 不传 `strictBackup` 时保留原行为：download 备份读取或本地保
 | 命令 | 宿主期限 |
 | --- | ---: |
 | ports | 8000 |
-| connect、disconnect、stop、interrupt | 15000 |
+| connect | 30000 |
+| disconnect、stop、interrupt | 15000 |
 | run | 12000 |
 | send | 8000 |
 | download | 120000 |

@@ -162,7 +162,7 @@ class BrokerBridgeClient:
                 "command": command,
                 "arguments": arguments or {},
                 "expected_epoch": expected_epoch,
-            })
+            }, timeout=COMMAND_TIMEOUTS[command] + 15.0)
         except BrokerUnavailable as exc:
             raise BridgeFailure(str(exc)) from exc
         data = result.get("data")

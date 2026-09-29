@@ -18,11 +18,29 @@ if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
 from broker.client import BrokerClient, BrokerUnavailable, pipe_address
+from broker.adapter import BrokerBridgeClient
+from bridge_client import COMMAND_TIMEOUTS
 from broker.identity import current_user_sid
 from broker.protocol import MAX_MESSAGE_BYTES, PROTOCOL_VERSION, ProtocolError, decode_message, encode_message
 
 
 class FramingTests(unittest.TestCase):
+    def test_control_wait_exceeds_bridge_command_timeout(self):
+        class RecordingBroker:
+            def __init__(self):
+                self.timeout = None
+
+            def request(self, operation, arguments, *, timeout=None):
+                self.timeout = timeout
+                return {"data": {"connected": True}, "control_epoch": 1}
+
+        client = object.__new__(BrokerBridgeClient)
+        client._started = True
+        client._broker = RecordingBroker()
+        client._control_epoch = 0
+        self.assertEqual(client.call_control("connect", {"port": "COM4"}, expected_epoch=0), {"connected": True})
+        self.assertGreater(client._broker.timeout, COMMAND_TIMEOUTS["connect"])
+
     def test_json_round_trip_is_utf8_and_rejects_non_objects(self):
         wire = encode_message({"type": "status", "note": "模拟"})
         self.assertEqual(decode_message(wire[4:]), {"type": "status", "note": "模拟"})
